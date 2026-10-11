@@ -47,3 +47,26 @@ This section provides advanced configuration options for experienced users. It i
 - **Run Command**: Execute custom commands directly in the container for advanced management or troubleshooting.
 - **Volumes**: To ensure data persistence across deployments, configure storage volumes for your application.
 - **Resources**: Adjust the CPU and memory allocation for your application.
+
+### Enabling Redis Persistence (AOF)
+
+By default a Dokploy Redis service starts with `redis-server --requirepass <password>` and no persistence options, so it keeps Redis' built-in RDB defaults and does not use the append-only file (AOF). To turn on AOF, override the start command from **Advanced → Run Command**.
+
+Set the fields to:
+
+- **Command**: `/bin/sh`
+- **Arguments (Args)**, one per entry:
+  - `-c`
+  - `redis-server --requirepass "$REDIS_PASSWORD" --appendonly yes --save 3600 1`
+
+Dokploy already injects the `REDIS_PASSWORD` environment variable, so referencing `"$REDIS_PASSWORD"` keeps the password out of the command and avoids quoting problems with special characters.
+
+After saving, click **Deploy** on the database so the new command takes effect. Once it is running you can confirm it with:
+
+```bash
+redis-cli -a "$REDIS_PASSWORD" config get appendonly
+# 1) "appendonly"
+# 2) "yes"
+```
+
+Adjust the flags to taste, for example `--appendfsync everysec` for the default AOF fsync policy, or a different `--save` rule for RDB snapshots.
